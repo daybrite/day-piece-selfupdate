@@ -6,6 +6,8 @@ build = "build.rs"
 publish = false
 
 [features]
+# Only the isolated CI copies enable the automated GUI driver.
+e2e = []
 default = ["mock"]
 mock = ["day/mock", "day-piece-selfupdate/mock"]
 appkit = ["day/appkit", "day-piece-selfupdate/appkit"]

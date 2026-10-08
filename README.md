@@ -33,7 +33,7 @@ open 'build/prototype/sandbox/installed/Self Update Demo.app'
 
 Use `--mode plain` to compare the nonsandboxed fixture. Fixture keys and bundles live under ignored `build/`. The fixture intentionally uses ad-hoc signatures and identifier-only XPC requirements; official tag builds bind XPC to the Apple anchor and configured signing team.
 
-On Linux or Windows, `python3 scripts/desktop_fixture.py` exercises the native helper with synthetic signed packages, including bad-signature rejection and relaunch. The Windows test requires Rust and NSIS. CI runs these on native runners; the standard Day demo builds for `macos-appkit`, `windows-winui`, and `linux-gtk`.
+On Linux or Windows, `python3 scripts/desktop_fixture.py` exercises the native helper with synthetic signed packages, including bad-signature rejection and relaunch. The Windows test requires Rust and NSIS. CI retains these fast tests and also runs a real packaged **1.0.0 → 1.1.0** update on all three desktop runners, including sandboxed macOS. See [the testing guide](docs/TESTING.md) for coverage, filesystem feeds and local commands.
 
 ## Components
 

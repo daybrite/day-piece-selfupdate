@@ -1,6 +1,7 @@
 fn main() {
     for name in [
         "DAY_UPDATE_PUBLIC_KEY",
+        "DAY_UPDATE_APPLICATION_ID",
         "DAY_UPDATE_REPOSITORY",
         "DAY_UPDATE_BUILD",
         "DAY_UPDATE_VERSION",

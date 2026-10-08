@@ -4,7 +4,11 @@ use crate::{
     verification::{self, Asset, Release, Result},
 };
 use serde::Deserialize;
-use std::{fs::File, io::Read, path::Path};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug)]
 pub struct Update {
@@ -34,44 +38,82 @@ fn agent() -> ureq::Agent {
         .build()
         .into()
 }
-fn get(url: &str, max: u64) -> Result<Vec<u8>> {
-    let mut response = agent().get(url).call()?;
-    let mut bytes = Vec::new();
-    response
-        .body_mut()
-        .as_reader()
-        .take(max + 1)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() as u64 > max {
-        return Err("response exceeds limit".into());
-    }
-    Ok(bytes)
+/// Explicit transport selection. Directory feeds contain `latest.json` and
+/// `<tag>/update-<target>.json`, its `.sig`, and the signed release's artifacts.
+/// Selecting a directory changes transport only; all signature, identity, size,
+/// hash, target and increasing-build checks still apply. No environment override.
+#[derive(Clone, Debug)]
+pub enum Source {
+    Github,
+    Directory(PathBuf),
 }
-fn url(config: &Configuration, tag: &str, file: &str) -> Result<String> {
-    if !verification::safe_name(tag) || !verification::safe_name(file) {
-        return Err("unsafe release path".into());
+impl Source {
+    fn open(&self, config: &Configuration, tag: Option<&str>, file: &str) -> Result<Box<dyn Read>> {
+        if !verification::safe_name(file) || tag.is_some_and(|t| !verification::safe_name(t)) {
+            return Err("unsafe release path".into());
+        }
+        match self {
+            Self::Directory(root) => {
+                // Canonical containment also rejects symlinks escaping the feed.
+                let root = root.canonicalize()?;
+                let path = match tag {
+                    Some(tag) => root.join(tag).join(file),
+                    None => root.join(file),
+                }
+                .canonicalize()?;
+                if !path.starts_with(&root) {
+                    return Err("release path escapes feed".into());
+                }
+                Ok(Box::new(File::open(path)?))
+            }
+            Self::Github => {
+                let repo = repository(config)?;
+                let url = match tag {
+                    Some(tag) => {
+                        format!("https://github.com/{repo}/releases/download/{tag}/{file}")
+                    }
+                    None => format!("https://api.github.com/repos/{repo}/releases/latest"),
+                };
+                Ok(Box::new(
+                    agent().get(&url).call()?.into_body().into_reader(),
+                ))
+            }
+        }
     }
-    Ok(format!(
-        "https://github.com/{}/releases/download/{tag}/{file}",
-        repository(config)?
-    ))
+    fn get(
+        &self,
+        config: &Configuration,
+        tag: Option<&str>,
+        file: &str,
+        max: u64,
+    ) -> Result<Vec<u8>> {
+        let mut bytes = Vec::new();
+        self.open(config, tag, file)?
+            .take(max + 1)
+            .read_to_end(&mut bytes)?;
+        if bytes.len() as u64 > max {
+            return Err("response exceeds limit".into());
+        }
+        Ok(bytes)
+    }
 }
 
 pub fn check(config: &Configuration) -> Result<Option<Update>> {
-    let info: GithubRelease = serde_json::from_slice(&get(
-        &format!(
-            "https://api.github.com/repos/{}/releases/latest",
-            repository(config)?
-        ),
-        1024 * 1024,
-    )?)?;
+    check_from(config, &Source::Github)
+}
+
+pub fn check_from(config: &Configuration, source: &Source) -> Result<Option<Update>> {
+    let info: GithubRelease =
+        serde_json::from_slice(&source.get(config, None, "latest.json", 1024 * 1024)?)?;
     if info.draft || info.prerelease {
         return Err("latest endpoint returned an unpublished or prerelease build".into());
     }
     let name = format!("update-{}.json", config.target);
-    let metadata = get(&url(config, &info.tag_name, &name)?, 65536)?;
-    let signature = String::from_utf8(get(
-        &url(config, &info.tag_name, &format!("{name}.sig"))?,
+    let metadata = source.get(config, Some(&info.tag_name), &name, 65536)?;
+    let signature = String::from_utf8(source.get(
+        config,
+        Some(&info.tag_name),
+        &format!("{name}.sig"),
         1024,
     )?)?;
     let release = verification::verify(
@@ -94,13 +136,16 @@ pub fn check(config: &Configuration) -> Result<Option<Update>> {
     }))
 }
 
-fn download(config: &Configuration, tag: &str, asset: &Asset, destination: &Path) -> Result<()> {
-    let mut response = agent().get(&url(config, tag, &asset.name)?).call()?;
+fn download(
+    config: &Configuration,
+    source: &Source,
+    tag: &str,
+    asset: &Asset,
+    destination: &Path,
+) -> Result<()> {
+    let reader = source.open(config, Some(tag), &asset.name)?;
     let mut file = File::create(destination)?;
-    let copied = std::io::copy(
-        &mut response.body_mut().as_reader().take(asset.size + 1),
-        &mut file,
-    )?;
+    let copied = std::io::copy(&mut reader.take(asset.size + 1), &mut file)?;
     file.sync_all()?;
     if copied != asset.size {
         return Err("download length mismatch".into());
@@ -109,6 +154,14 @@ fn download(config: &Configuration, tag: &str, asset: &Asset, destination: &Path
 }
 
 pub fn download_update(config: &Configuration, update: &Update) -> Result<()> {
+    download_update_from(config, update, &Source::Github)
+}
+
+pub fn download_update_from(
+    config: &Configuration,
+    update: &Update,
+    source: &Source,
+) -> Result<()> {
     // Verify even if a caller constructed Update itself; never accept an unauthenticated URL.
     let release = verification::verify(
         &update.metadata,
@@ -123,6 +176,7 @@ pub fn download_update(config: &Configuration, update: &Update) -> Result<()> {
     let stage = tempfile::tempdir_in(&config.inbox)?;
     download(
         config,
+        source,
         &release.tag,
         &Asset {
             name: release.archive.clone(),
@@ -134,6 +188,7 @@ pub fn download_update(config: &Configuration, update: &Update) -> Result<()> {
     if let Some(helper) = &release.helper {
         download(
             config,
+            source,
             &release.tag,
             helper,
             &stage.path().join(&helper.name),

@@ -14,10 +14,15 @@ pub fn configuration() -> Result<Configuration> {
     } else {
         executable
     };
-    let inbox = std::env::temp_dir().join("day-selfupdate-dev.daybrite.selfupdatedemo");
+    let application_id =
+        option_env!("DAY_UPDATE_APPLICATION_ID").unwrap_or("dev.daybrite.selfupdatedemo");
+    if !verification::safe_name(application_id) {
+        return Err("invalid application identifier".into());
+    }
+    let inbox = std::env::temp_dir().join(format!("day-selfupdate-{application_id}"));
     desktop::private_directory(&inbox)?;
     Ok(Configuration {
-        application_id: "dev.daybrite.selfupdatedemo".into(),
+        application_id: application_id.into(),
         build: option_env!("DAY_UPDATE_BUILD").unwrap_or("1").into(),
         version: option_env!("DAY_UPDATE_VERSION")
             .unwrap_or(env!("CARGO_PKG_VERSION"))

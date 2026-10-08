@@ -5,6 +5,9 @@ use day_piece_selfupdate::{
     ui::{Labels, update_panel},
 };
 
+#[cfg(feature = "e2e")]
+mod e2e;
+
 day::resources!();
 day::day_start!(options: window(), root);
 
@@ -37,6 +40,8 @@ fn status(phase: Phase) -> String {
 }
 
 pub fn root() -> impl Piece {
+    #[cfg(feature = "e2e")]
+    e2e::start();
     let phase = Signal::new(Phase::Idle);
     let version = configuration()
         .map(|c| c.version)

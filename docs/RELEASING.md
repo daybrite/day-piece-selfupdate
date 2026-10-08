@@ -103,6 +103,8 @@ Flatpak, Snap, and packaged Windows/MSIX installations are detected and directed
 
 ## Validation and recovery
 
+Before the shared release workflow runs, native CI builds two actual demo releases and verifies rejection of tampering, installation and relaunch on macOS, Windows and Linux. See [packaged integration testing](TESTING.md). These tests use disposable update keys and no production signing credentials.
+
 ```sh
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings

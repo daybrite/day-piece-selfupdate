@@ -27,8 +27,65 @@ jobs:
         run: choco install nsis -y --no-progress
       - if: runner.os != 'macOS'
         run: python scripts/desktop_fixture.py
-  demo:
+  update-e2e:
+    name: Packaged update (${{ matrix.target }})
     needs: host
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: macos-appkit
+          - os: windows-latest
+            target: windows-winui
+          - os: ubuntu-latest
+            target: linux-gtk
+    runs-on: ${{ matrix.os }}
+    # No release environment or secrets: each run generates a disposable Ed25519 key.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: daybrite/actions/.github/actions/setup-day-deps@v1
+        with:
+          target: ${{ matrix.target }}
+          pack: 'true'
+          extras: 'true'
+      - uses: daybrite/actions/.github/actions/setup-day-cli@v1
+        id: day-cli
+      - uses: actions/cache@v4
+        with:
+          key: update-e2e-${{ runner.os }}-${{ runner.arch }}-${{ steps.day-cli.outputs.commit }}-${{ hashFiles('**/Cargo.toml') }}
+          path: |
+            build/e2e/${{ matrix.target }}/workspace/target
+            build/e2e/${{ matrix.target }}/workspace/demo/build/day/cargo
+      - name: Build 1.0 and 1.1; reject tampering; install and relaunch
+        shell: bash
+        env:
+          GSK_RENDERER: cairo
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_OS" = Linux ]; then
+            export XDG_RUNTIME_DIR="$RUNNER_TEMP/selfupdate-runtime"
+            mkdir -p "$XDG_RUNTIME_DIR"
+            chmod 700 "$XDG_RUNTIME_DIR"
+            dbus-run-session -- xvfb-run -a python scripts/e2e.py
+          else
+            python scripts/e2e.py
+          fi
+      - name: Preserve update evidence (no private keys)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: update-e2e-${{ matrix.target }}
+          path: build/e2e/${{ matrix.target }}/reports/
+          if-no-files-found: warn
+  demo:
+    needs: [host, update-e2e]
     uses: daybrite/actions/.github/workflows/dayapp.yml@v1
     permissions:
       contents: write

@@ -41,7 +41,8 @@ def configure(target):
     team = os.environ.get('DAY_UPDATE_APPLE_TEAM', '')
     if release and target.startswith('macos-') and not re.fullmatch('[A-Z0-9]{10}', team):
         raise ValueError('Set DAY_UPDATE_APPLE_TEAM to the Developer ID signing Team ID')
-    values = dict(DAY_UPDATE_BUILD=str(app['build']), DAY_UPDATE_VERSION=version,
+    values = dict(DAY_UPDATE_APPLICATION_ID=app['id'],
+                  DAY_UPDATE_BUILD=str(app['build']), DAY_UPDATE_VERSION=version,
                   DAY_UPDATE_PUBLIC_KEY=key, DAY_UPDATE_TARGET=triple,
                   DAY_UPDATE_REPOSITORY=os.environ.get('GITHUB_REPOSITORY', 'daybrite/day-piece-selfupdate'))
     path = os.environ.get('GITHUB_ENV')
