@@ -1,0 +1,15 @@
+/target/
+/build/
+/demo/target/
+/demo/build/
+/demo/.day/
+*.key
+.DS_Store
+*.log
+**/__pycache__/
+/demo/platform/macos/DayApp.local.xcconfig
+/demo/platform/macos/DayApp.xcodeproj/xcuserdata/
+/.cargo/
+/demo/.cargo/
+/Cargo.lock
+/demo/Cargo.lock

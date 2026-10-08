@@ -1,0 +1,53 @@
+name: ci
+on:
+  push:
+    branches: [main]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo test --workspace
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - if: runner.os == 'Windows'
+        run: choco install nsis -y --no-progress
+      - if: runner.os != 'macOS'
+        run: python scripts/desktop_fixture.py
+  demo:
+    needs: host
+    uses: daybrite/actions/.github/workflows/dayapp.yml@v1
+    permissions:
+      contents: write
+    secrets: inherit
+    with:
+      project-path: demo
+      targets: macos-appkit, windows-winui, linux-gtk
+      update-day-deps: true
+      scripts: dayscript/demo.yaml
+      target-setup: |
+        macos-appkit: DAY_UPDATE_PUBLIC_KEY='${{ vars.DAY_UPDATE_PUBLIC_KEY }}' DAY_UPDATE_APPLE_TEAM='${{ vars.DAY_UPDATE_APPLE_TEAM }}' python3 scripts/release.py configure macos-appkit
+        windows-winui: DAY_UPDATE_PUBLIC_KEY='${{ vars.DAY_UPDATE_PUBLIC_KEY }}' python scripts/release.py configure windows-winui
+        linux-gtk: DAY_UPDATE_PUBLIC_KEY='${{ vars.DAY_UPDATE_PUBLIC_KEY }}' python3 scripts/release.py configure linux-gtk
+      post-pack-command: DAY_UPDATE_APPLE_TEAM='${{ vars.DAY_UPDATE_APPLE_TEAM }}' python ../scripts/release.py stage "$DAY_PACK_TARGET"
+      signing-environment: release-signing
+      macos-update-zip: selfupdate-demo-macos-appkit-update.zip
+      update-signing: true
+      update-public-key: ${{ vars.DAY_UPDATE_PUBLIC_KEY }}
+      update-application-id: dev.daybrite.selfupdatedemo
+      upload-ios: 'false'
+      upload-macos: 'false'
+      upload-play: 'false'

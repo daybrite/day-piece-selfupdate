@@ -1,0 +1,32 @@
+# The Day project manifest (https://daybrite.dev/docs/cli). `name`/`version` come from
+# Cargo.toml; any [app] property may be overridden per platform, toolkit, or target.
+schema = 1
+
+[app]
+id = "dev.daybrite.selfupdatedemo"
+title = "Self Update Demo"
+build = 1
+targets = ["macos-appkit", "windows-winui", "linux-gtk"]
+
+# The window's geometry in points (https://daybrite.dev/docs/size-classes). `width`/`height` are
+# the desktop default and the size a desktop-windowing Android window opens at; the minimum is
+# how small the system may make it. `day build` carries all four into the Android manifest's
+# <layout> element and the iOS Info.plist, so declare them here rather than in either.
+[window]
+width = 720
+height = 500
+min_width = 320
+min_height = 400
+
+[sandbox.macos-appkit]
+enabled = true
+network-client = true
+
+[signing.macos]
+identity = "${DAY_SIGN_MACOS_IDENTITY}"
+entitlements = "platform/macos/Updater.entitlements"
+
+[signing.macos.notarize]
+key-id = "${DAY_NOTARY_KEY_ID}"
+issuer = "${DAY_NOTARY_ISSUER}"
+key-path = "${DAY_NOTARY_KEY}"

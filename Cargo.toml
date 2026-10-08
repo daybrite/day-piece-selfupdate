@@ -1,0 +1,50 @@
+[package]
+name = "day-piece-selfupdate"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "MPL-2.0"
+description = "Experimental Day self-update piece and macOS installer prototype"
+publish = false
+build = "build.rs"
+
+[workspace]
+members = ["crates/update-core", "tools"]
+resolver = "3"
+
+[features]
+default = ["github"]
+github = ["dep:ureq"]
+ui = ["dep:day-core", "dep:day-pieces", "dep:day-reactive"]
+appkit = ["ui"]
+mock = ["ui"]
+gtk = ["ui"]
+winui = ["ui"]
+
+[package.metadata.day]
+compat = "0.5"
+
+[package.metadata.day.piece]
+backends = ["appkit", "gtk", "winui", "mock"]
+
+[dependencies]
+day-selfupdate-core = { path = "crates/update-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Canonical dependencies; use scripts/local-day.py for adjacent-checkout development.
+day-core = { git = "https://github.com/daybrite/day", optional = true }
+day-pieces = { git = "https://github.com/daybrite/day", optional = true }
+day-reactive = { git = "https://github.com/daybrite/day", optional = true }
+
+[build-dependencies]
+cc = "1"
+
+[dependencies.ureq]
+version = "3.4"
+optional = true
+
+[dependencies.tempfile]
+version = "3"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_Packaging_Appx"] }

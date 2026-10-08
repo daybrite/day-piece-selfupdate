@@ -1,0 +1,7 @@
+# Installation and signature checks run in the platform fixture harnesses.
+flow:
+  - wait_for: { id: check-update }
+  - assert_text: { id: update-status, key: status_idle }
+  - assert_visible: { id: prepare-update }
+  - assert_visible: { id: quit-update }
+  - screenshot: selfupdate-idle
