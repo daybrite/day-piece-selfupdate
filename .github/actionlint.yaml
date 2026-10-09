@@ -1,0 +1,7 @@
+# Copyright © The Daybrite Project
+# SPDX-License-Identifier: MPL-2.0
+# `xcode-27` is a GitHub-hosted label in the daybrite organization (the macOS floor every
+# repository's macOS jobs run on); actionlint only knows GitHub's public labels.
+self-hosted-runner:
+  labels:
+    - xcode-27

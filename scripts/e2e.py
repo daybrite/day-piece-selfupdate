@@ -13,6 +13,7 @@ import platform
 import plistlib
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -34,8 +35,27 @@ ENV.update(GITHUB_REF_TYPE='branch', APPIMAGE_EXTRACT_AND_RUN='1')
 
 def run(*args, cwd=ROOT, capture=False, timeout=3600):
     print('+', ' '.join(map(str, args)), flush=True)
-    return subprocess.run(list(map(str, args)), cwd=cwd, env=ENV, check=True,
-                          text=True, capture_output=capture, timeout=timeout)
+    try:
+        return subprocess.run(list(map(str, args)), cwd=cwd, env=ENV, check=True,
+                              text=True, capture_output=capture, timeout=timeout)
+    except subprocess.CalledProcessError as error:
+        # Captured output is the only trace a crashed child leaves (a dyld or sandbox abort
+        # prints its reason to stderr before the signal); never let the traceback swallow it.
+        if capture:
+            print(f'{outcome(error.returncode)} for {args[0]}', flush=True)
+            for name, text in [('stdout', error.stdout), ('stderr', error.stderr)]:
+                if text:
+                    print(f'--- {name} ---\n{text.rstrip()}\n---', flush=True)
+        raise
+
+
+def outcome(returncode):
+    if returncode < 0:
+        try:
+            return f'died with {signal.Signals(-returncode).name}'
+        except ValueError:
+            return f'died with signal {-returncode}'
+    return f'exited with status {returncode}'
 
 
 def write(path, value):
@@ -61,6 +81,35 @@ def one(paths):
 def binary(app):
     info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
     return app / 'Contents/MacOS' / info['CFBundleExecutable']
+
+
+def record_dependencies(executables):
+    """Report each Mach-O's dylib dependencies and runpaths before anything launches.
+
+    A `@rpath/` library the host does not ship and the bundle does not embed is a launch
+    abort that leaves no other trace, so the evidence has to be captured up front.
+    """
+    with (REPORTS / 'installed-dylibs.txt').open('w') as report:
+        for exe in executables:
+            for tool in [['otool', '-L'], ['otool', '-l']]:
+                result = subprocess.run([*tool, str(exe)], env=ENV, text=True, capture_output=True)
+                lines = result.stdout.splitlines()
+                if tool[1] == '-l':
+                    lines = [line.strip() for line in lines if 'path ' in line or 'LC_RPATH' in line]
+                report.write('\n'.join([f'$ {" ".join(tool)} {exe}', *lines, result.stderr.rstrip(), '']))
+
+
+def preserve_crash_reports(since):
+    """Copy the host's crash reports for our executables written during this run."""
+    if platform.system() != 'Darwin':
+        return
+    reports = Path.home() / 'Library/Logs/DiagnosticReports'
+    if not reports.is_dir():
+        return
+    names = ('Demo', 'Launcher', 'day-selfupdate-tool')
+    for path in sorted(reports.glob('*.ips')):
+        if path.name.startswith(names) and path.stat().st_mtime >= since:
+            shutil.copy2(path, REPORTS / f'crash-{path.name}')
 
 
 def build(day):
@@ -127,6 +176,8 @@ def install_old():
         run('/usr/bin/codesign', '--verify', '--deep', '--strict', app)
         entitlements = run('/usr/bin/codesign', '-d', '--entitlements', ':-', app, capture=True)
         assert plistlib.loads(entitlements.stdout.encode())['com.apple.security.app-sandbox'] is True
+        record_dependencies([binary(app), *app.glob('Contents/XPCServices/*.xpc/Contents/MacOS/*'),
+                             *app.glob('Contents/Helpers/*')])
         return binary(app), app
     if TARGET == 'windows-winui':
         app = destination / 'Self Update Demo'
@@ -285,12 +336,14 @@ def main():
     if REPORTS.exists():
         shutil.rmtree(REPORTS)
     REPORTS.mkdir()
+    started = time.time()
     try:
         if not args.reuse_builds:
             build(args.day)
         exercise()
     except Exception:
         (REPORTS / 'failure.txt').write_text(traceback.format_exc())
+        preserve_crash_reports(started)
         raise
 
 

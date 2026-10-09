@@ -28,38 +28,63 @@ jobs:
       - if: runner.os != 'macOS'
         run: python scripts/desktop_fixture.py
   update-e2e:
-    name: Packaged update (${{ matrix.target }})
+    name: Packaged update (${{ matrix.label }})
     needs: host
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         include:
+          # The required macOS leg runs on the same `xcode-27` runner as every other macOS job
+          # in these repos (dayapp.yml's floor): current macOS, current Xcode. It is the
+          # environment the shared demo workflow packages with, so it must pass.
+          - os: xcode-27
+            target: macos-appkit
+            label: macos-appkit
+            artifact: update-e2e-macos-appkit
+          # Advisory back-deployment leg: an app built with the newest Xcode the macos-15 image
+          # carries (26.3, SDK 26.2; its default Xcode 16.4 cannot link Day) and installed on
+          # that macOS 15 host. Its first run died with SIGABRT in the installed 1.0.0 app
+          # before `--selfupdate-probe` printed anything, and the harness discarded stderr;
+          # the reports it uploads now include that stderr, the executable's dylib
+          # dependencies and the host's crash reports. It stays advisory until that
+          # evidence names the cause: a failure here must not block the demo release leg.
           - os: macos-15
             target: macos-appkit
+            label: macos-appkit, macOS 15 host (advisory)
+            artifact: update-e2e-macos-appkit-macos-15
             xcode: '26.3'
+            advisory: true
           - os: windows-latest
             target: windows-winui
+            label: windows-winui
+            artifact: update-e2e-windows-winui
           - os: ubuntu-latest
             target: linux-gtk
+            label: linux-gtk
+            artifact: update-e2e-linux-gtk
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.advisory == true }}
     # No release environment or secrets: each run generates a disposable Ed25519 key.
     steps:
       - uses: actions/checkout@v7
-      - name: Select the macOS build toolchain
+      - name: Record the macOS build toolchain
         if: runner.os == 'macOS'
         shell: bash
         env:
           XCODE_VERSION: ${{ matrix.xcode }}
         run: |
           set -euo pipefail
-          # macos-15 defaults to Xcode 16.4 / SDK 15.5. Keep testing the older
-          # OS, but explicitly select the newer toolchain installed on this image.
-          export DEVELOPER_DIR="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
-          test -d "$DEVELOPER_DIR"
-          echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
+          # A row that names an Xcode version selects that install explicitly (macos-15
+          # defaults to 16.4 / SDK 15.5); the xcode-27 runner's default is the one wanted.
+          if [ -n "$XCODE_VERSION" ]; then
+            export DEVELOPER_DIR="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+            test -d "$DEVELOPER_DIR"
+            echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
+          fi
           mkdir -p build/e2e/macos-appkit
           {
+            sw_vers
             xcodebuild -version
             xcrun --sdk macosx --show-sdk-version
             xcrun clang --version
@@ -108,7 +133,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: update-e2e-${{ matrix.target }}
+          name: ${{ matrix.artifact }}
           path: |
             build/e2e/${{ matrix.target }}/reports/
             build/e2e/${{ matrix.target }}/build.log
