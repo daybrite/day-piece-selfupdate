@@ -2,6 +2,8 @@
 
 The `ci` workflow has three layers. `host` runs Rust tests, formatting and Clippy on macOS, Windows and Linux, plus the fast synthetic Windows/Linux installer fixtures. `update-e2e` builds and exercises real native demo packages on all three hosts. The shared Day `demo` build/release workflow runs only after both layers pass; its dayscript checks the ordinary localized UI.
 
+The packaged macOS job stays on `macos-15` but explicitly selects its installed Xcode 26.3 toolchain. The image defaults to Xcode 16.4, with which the first packaged CI run failed at the native link step. Build caches include the selected Xcode version. CI enables `DAY_VERBOSE=1` and preserves `build.log` alongside the test reports and macOS `toolchain.log`, including on build failure: Day's short Xcode error summary can omit the underlying linker diagnostic.
+
 ## Packaged app integration
 
 `scripts/e2e.py` copies the project into ignored `build/e2e/<target>/workspace`, gives the fixture a separate application ID (`dev.daybrite.selfupdatedemo.e2e`) and title, and enables the demo's `e2e` feature only in that copy. It independently compiles release-profile versions **1.0.0 / build 1** and **1.1.0 / build 2** with `day pack` and the same `scripts/release.py stage` hook used by releases. Changing Cargo's package version changes the compiled Rust version constant; the test compares both running versions and executable hashes.

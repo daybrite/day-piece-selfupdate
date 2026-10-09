@@ -37,6 +37,7 @@ jobs:
         include:
           - os: macos-15
             target: macos-appkit
+            xcode: '26.3'
           - os: windows-latest
             target: windows-winui
           - os: ubuntu-latest
@@ -45,6 +46,24 @@ jobs:
     # No release environment or secrets: each run generates a disposable Ed25519 key.
     steps:
       - uses: actions/checkout@v7
+      - name: Select the macOS build toolchain
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          XCODE_VERSION: ${{ matrix.xcode }}
+        run: |
+          set -euo pipefail
+          # macos-15 defaults to Xcode 16.4 / SDK 15.5. Keep testing the older
+          # OS, but explicitly select the newer toolchain installed on this image.
+          export DEVELOPER_DIR="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+          test -d "$DEVELOPER_DIR"
+          echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
+          mkdir -p build/e2e/macos-appkit
+          {
+            xcodebuild -version
+            xcrun --sdk macosx --show-sdk-version
+            xcrun clang --version
+          } 2>&1 | tee build/e2e/macos-appkit/toolchain.log
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-python@v6
         with:
@@ -58,7 +77,7 @@ jobs:
         id: day-cli
       - uses: actions/cache@v4
         with:
-          key: update-e2e-${{ runner.os }}-${{ runner.arch }}-${{ steps.day-cli.outputs.commit }}-${{ hashFiles('**/Cargo.toml') }}
+          key: update-e2e-${{ runner.os }}-${{ runner.arch }}-${{ matrix.xcode || 'default' }}-${{ steps.day-cli.outputs.commit }}-${{ hashFiles('**/Cargo.toml') }}
           path: |
             build/e2e/${{ matrix.target }}/workspace/target
             build/e2e/${{ matrix.target }}/workspace/demo/build/day/cargo
@@ -67,22 +86,33 @@ jobs:
         env:
           GSK_RENDERER: cairo
           LIBGL_ALWAYS_SOFTWARE: '1'
+          DAY_VERBOSE: '1'
+          TEST_TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
-          if [ "$RUNNER_OS" = Linux ]; then
-            export XDG_RUNTIME_DIR="$RUNNER_TEMP/selfupdate-runtime"
-            mkdir -p "$XDG_RUNTIME_DIR"
-            chmod 700 "$XDG_RUNTIME_DIR"
-            dbus-run-session -- xvfb-run -a python scripts/e2e.py
-          else
-            python scripts/e2e.py
-          fi
+          mkdir -p "build/e2e/$TEST_TARGET"
+          # Keep this outside reports/: the harness recreates that directory.
+          # Verbose output retains ld's diagnostic, which Day's short Xcode
+          # summary can reduce to just "linker command failed".
+          {
+            if [ "$RUNNER_OS" = Linux ]; then
+              export XDG_RUNTIME_DIR="$RUNNER_TEMP/selfupdate-runtime"
+              mkdir -p "$XDG_RUNTIME_DIR"
+              chmod 700 "$XDG_RUNTIME_DIR"
+              dbus-run-session -- xvfb-run -a python scripts/e2e.py
+            else
+              python scripts/e2e.py
+            fi
+          } 2>&1 | tee "build/e2e/$TEST_TARGET/build.log"
       - name: Preserve update evidence (no private keys)
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: update-e2e-${{ matrix.target }}
-          path: build/e2e/${{ matrix.target }}/reports/
+          path: |
+            build/e2e/${{ matrix.target }}/reports/
+            build/e2e/${{ matrix.target }}/build.log
+            build/e2e/${{ matrix.target }}/toolchain.log
           if-no-files-found: warn
   demo:
     needs: [host, update-e2e]
