@@ -58,7 +58,8 @@ def main():
             destination.write_text('#!/bin/sh\nexit 0\n'); destination.chmod(0o700)
             payload = inbox / 'update.appimage'
             payload.write_text('#!/bin/sh\nprintf new > "$DYSU_FIXTURE_MARKER"\n')
-        arch = {'AMD64': 'x86_64', 'arm64': 'aarch64'}.get(platform.machine(), platform.machine())
+        # Windows on ARM reports 'ARM64' and macOS 'arm64'; match Rust's std::env::consts::ARCH.
+        arch = {'amd64': 'x86_64', 'arm64': 'aarch64'}.get(platform.machine().lower(), platform.machine())
         target = ('windows-winui-' if WINDOWS else 'linux-gtk-') + arch
         release = dict(schema=2, application_id='test.day.selfupdate', version='0.2.0', build=2,
                        archive=payload.name, size=payload.stat().st_size, sha256=hashlib.sha256(payload.read_bytes()).hexdigest(),

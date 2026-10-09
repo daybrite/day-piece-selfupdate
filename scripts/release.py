@@ -32,7 +32,8 @@ def settings(target):
         raise ValueError('DAY_UPDATE_PUBLIC_KEY must be a hex Ed25519 public key')
     if release and not key:
         raise ValueError('Set the DAY_UPDATE_PUBLIC_KEY repository variable before releasing')
-    arch = {'arm64': 'aarch64', 'AMD64': 'x86_64'}.get(platform.machine(), platform.machine())
+    # Windows on ARM reports 'ARM64' and macOS 'arm64'; match Rust's std::env::consts::ARCH.
+    arch = {'arm64': 'aarch64', 'amd64': 'x86_64'}.get(platform.machine().lower(), platform.machine())
     return app, version, key, f'{target}-{arch}', release
 
 
