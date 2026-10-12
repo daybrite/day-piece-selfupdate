@@ -19,3 +19,14 @@ open 'build/prototype/sandbox/installed/Self Update Demo.app'
 ```
 
 Check, prepare, then quit within 90 seconds. The fixture moves from 0.1.0 to 0.2.0. Diagnostic `--selfupdate-probe` and `--selfupdate-install` entry points use the same native client as the UI.
+
+
+## Generated native projects
+
+Use a Day CLI with automatic native project generation; Apple builds require **Xcode 27
+or newer**. Xcode project documents, Android Gradle files, and HarmonyOS hvigor files are
+created under `build/` by `day prepare`, `day build`, and `day launch`. Open the selected
+project with `day open -t <target>`; edits to generated files are disposable. Apple Swift
+sources, plists and `.xcconfig` files, and any Android resource overlays, remain app-owned
+under `platform/`. For additional native configuration, use
+`day project add-target <target> --persist-native-project` to create a persistent override.
