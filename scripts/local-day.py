@@ -5,10 +5,12 @@ import tomllib
 root = Path(__file__).resolve().parents[1]
 day = root.parent / 'day'
 packages = {tomllib.loads(p.read_text()).get('package', {}).get('name'): p.parent
-            for p in (day / 'crates').glob('*/Cargo.toml')}
+            for group in ('crates', 'pieces', 'parts', 'toolkits')
+            for p in (day / group).glob('*/Cargo.toml')}
 for directory in [root, root / 'demo']:
-    names = ['day-core', 'day-pieces', 'day-reactive']
-    if directory != root: names += ['day', 'day-build']
+    names = ['day-core', 'day-pieces', 'day-reactive', 'day-piece-settings', 'day-fluent',
+             'day-spec', 'day-build']
+    if directory != root: names += ['day']
     patches = [f'{name} = {{ path = "{packages[name]}" }}' for name in names]
     config = directory / '.cargo/config.toml'
     config.parent.mkdir(exist_ok=True)

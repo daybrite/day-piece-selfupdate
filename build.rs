@@ -1,4 +1,8 @@
 fn main() {
+    // The Updates group's private Fluent catalog (resource/locales/<lang>/app.ftl) becomes
+    // `settings::res` through `day_fluent::locales!()`.
+    #[cfg(feature = "settings")]
+    day_build::generate_locales().expect("day-build: private locales");
     for name in [
         "DAY_UPDATE_PUBLIC_KEY",
         "DAY_UPDATE_APPLICATION_ID",

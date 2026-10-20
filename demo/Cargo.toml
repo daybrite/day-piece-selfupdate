@@ -9,10 +9,10 @@ publish = false
 # Only the isolated CI copies enable the automated GUI driver.
 e2e = []
 default = ["mock"]
-mock = ["day/mock", "day-piece-selfupdate/mock"]
-appkit = ["day/appkit", "day-piece-selfupdate/appkit"]
-gtk = ["day/gtk", "day-piece-selfupdate/gtk"]
-winui = ["day/winui", "day-piece-selfupdate/winui"]
+mock = ["day/mock", "day-piece-selfupdate/mock", "day-piece-settings/mock"]
+appkit = ["day/appkit", "day-piece-selfupdate/appkit", "day-piece-settings/appkit"]
+gtk = ["day/gtk", "day-piece-selfupdate/gtk", "day-piece-settings/gtk"]
+winui = ["day/winui", "day-piece-selfupdate/winui", "day-piece-settings/winui"]
 
 [lib]
 name = "dayapp"
@@ -20,7 +20,9 @@ crate-type = ["rlib"]
 
 [dependencies]
 day = { git = "https://github.com/daybrite/day" }
-day-piece-selfupdate = { path = "..", features = ["ui"] }
+day-piece-settings = { git = "https://github.com/daybrite/day" }
+# `settings` contributes the Updates group and the Check for Updates… command to Preferences.
+day-piece-selfupdate = { path = "..", features = ["settings"] }
 serde_json = "1"
 
 [build-dependencies]

@@ -100,7 +100,7 @@ jobs:
           extras: 'true'
       - uses: daybrite/actions/.github/actions/setup-day-cli@v1
         id: day-cli
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           key: update-e2e-${{ runner.os }}-${{ runner.arch }}-${{ matrix.xcode || 'default' }}-${{ steps.day-cli.outputs.commit }}-${{ hashFiles('**/Cargo.toml') }}
           path: |

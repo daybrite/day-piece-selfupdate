@@ -8,23 +8,26 @@ pub fn start() {
     if !updating && !relaunched {
         return;
     }
-    std::thread::spawn(move || {
+    day::task(async move {
         // Give the native window/event loop time to mount the reactive root.
-        std::thread::sleep(std::time::Duration::from_millis(500));
-        let result = run(updating);
-        if let Err(e) = result {
-            eprintln!("e2e: {e}");
-            if let Ok(c) = configuration() {
-                let _ = verification::atomic_write(
-                    &c.inbox.join("e2e-error.json"),
-                    serde_json::json!({"error": e.to_string()})
-                        .to_string()
-                        .as_bytes(),
-                );
+        day::sleep(500).await;
+        // The automation drives blocking downloads and installs: a pool job, awaited here.
+        let _ = day::spawn_blocking(move || {
+            if let Err(e) = run(updating) {
+                eprintln!("e2e: {e}");
+                if let Ok(c) = configuration() {
+                    let _ = verification::atomic_write(
+                        &c.inbox.join("e2e-error.json"),
+                        serde_json::json!({"error": e.to_string()})
+                            .to_string()
+                            .as_bytes(),
+                    );
+                }
             }
-        }
+        })
+        .await;
         // Same UI-thread quit used by the demo's Quit to Install button.
-        day::reactive::on_main(day::quit);
+        day::quit();
     });
 }
 

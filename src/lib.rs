@@ -5,6 +5,8 @@ pub use day_selfupdate_core as verification;
 #[cfg(feature = "github")]
 pub mod github;
 mod portable;
+#[cfg(feature = "settings")]
+pub mod settings;
 pub use portable::managed_installation;
 use serde::Deserialize;
 use std::path::PathBuf;

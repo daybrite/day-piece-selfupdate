@@ -2,6 +2,11 @@
 
 A standard localized Day app for macOS AppKit, Windows WinUI, and Linux GTK. It checks the latest stable release of `daybrite/day-piece-selfupdate`, downloads a verified update, and lets the user quit to install and reopen it.
 
+The app installs `Preferences` with Day's General group; the **Updates** group (automatic
+checks, frequency, background downloads, last checked, Check now) and the **Check for Updates…**
+menu item come from the `day-piece-selfupdate` settings provider. The home page mirrors the
+updater's status and has a button that opens the group.
+
 See [signing and release setup](../docs/RELEASING.md) before publishing. The macOS app is sandboxed. Initial Windows installations use the per-user NSIS package; Linux uses the AppImage. Flatpak, Snap, and MSIX installations do not self-replace.
 
 For local UI development, from this directory:
@@ -18,7 +23,7 @@ python3 scripts/prototype.py prepare --mode sandbox
 open 'build/prototype/sandbox/installed/Self Update Demo.app'
 ```
 
-Check, prepare, then quit within 90 seconds. The fixture moves from 0.1.0 to 0.2.0. Diagnostic `--selfupdate-probe` and `--selfupdate-install` entry points use the same native client as the UI.
+Open Settings ▸ Updates, check, download, then quit within 90 seconds. The fixture moves from 0.1.0 to 0.2.0. Diagnostic `--selfupdate-probe` and `--selfupdate-install` entry points use the same native client as the UI.
 
 
 ## Generated native projects
