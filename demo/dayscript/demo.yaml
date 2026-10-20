@@ -3,7 +3,7 @@
 # Updates… menu command. A development build has no signing key, so a check ends "unconfigured".
 flow:
   - wait_for: { id: open_updates }
-  - assert_text: { id: update_status, key: day_piece_selfupdate::status_idle }
+  - assert_text: { id: home_update_status, key: day_piece_selfupdate::status_idle }
   - screenshot: selfupdate-home
 
   # The provider's group id is a route of the Settings window; the window captures by its key.

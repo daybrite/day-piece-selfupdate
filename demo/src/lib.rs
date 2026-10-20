@@ -39,7 +39,8 @@ pub fn root() -> impl Piece {
         label(res::str::version(version)).id(day::id!(version)),
         label(res::str::introduction()).id(day::id!(introduction)),
         // The same phase the Updates group shows, mirrored on the home page.
-        label(move || settings::status_text(settings::phase().get())).id(day::id!(update_status)),
+        label(move || settings::status_text(settings::phase().get()))
+            .id(day::id!(home_update_status)),
         button(res::str::open_updates())
             .action(move || {
                 prefs.open_at("updates");
