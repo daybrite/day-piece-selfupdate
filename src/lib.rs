@@ -135,7 +135,7 @@ pub mod ui {
         quit: impl Fn() + 'static,
     ) -> impl Piece {
         column((
-            label(move || status(phase.get())).id("update-status"),
+            label(move || status(phase.get())).id(day_core::id!(update_status)),
             button(labels.check)
                 .enabled(move || {
                     !matches!(
@@ -144,15 +144,15 @@ pub mod ui {
                     )
                 })
                 .action(check)
-                .id("check-update"),
+                .id(day_core::id!(check_update)),
             button(labels.install)
                 .enabled(move || phase.get() == Phase::Available)
                 .action(install)
-                .id("prepare-update"),
+                .id(day_core::id!(prepare_update)),
             button(labels.quit)
                 .enabled(move || phase.get() == Phase::Ready)
                 .action(quit)
-                .id("quit-update"),
+                .id(day_core::id!(quit_update)),
         ))
         .spacing(12.0)
     }

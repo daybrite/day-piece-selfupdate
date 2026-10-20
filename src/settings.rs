@@ -130,7 +130,7 @@ fn updates_group() -> Group {
     let group = Group::new("updates", day_fluent::tr("day-settings-updates"))
         .icon(day_spec::Symbol::Refresh);
     if managed_installation() {
-        return group.row(rows::note(res::str::managed()).id("updates-managed"));
+        return group.row(rows::note(res::str::managed()).id(day_core::id!(updates_managed)));
     }
     let st = state();
     use prefs::Interval;
@@ -157,16 +157,16 @@ fn updates_group() -> Group {
         ))
         .row(
             rows::info(res::str::last_checked(), move || last_checked_text(st))
-                .id("updates-last-checked"),
+                .id(day_core::id!(updates_last_checked)),
         )
         .row(
             rows::info(res::str::status(), move || status_text(st.phase.get()))
-                .id("updates-status"),
+                .id(day_core::id!(updates_status)),
         )
         .row(
             rows::action(move || action_title(st.phase.get()), run_action)
                 .busy(st.busy)
-                .id("updates-check-now"),
+                .id(day_core::id!(updates_check_now)),
         )
 }
 

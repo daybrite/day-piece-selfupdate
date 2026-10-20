@@ -2,20 +2,20 @@
 # the UI: the home page, the Updates settings group the provider contributes, and the Check for
 # Updates… menu command. A development build has no signing key, so a check ends "unconfigured".
 flow:
-  - wait_for: { id: open-updates }
-  - assert_text: { id: update-status, key: day_piece_selfupdate::status_idle }
+  - wait_for: { id: open_updates }
+  - assert_text: { id: update_status, key: day_piece_selfupdate::status_idle }
   - screenshot: selfupdate-home
 
   # The provider's group id is a route of the Settings window; the window captures by its key.
   - navigate: { route: updates }
-  - wait_for: { id: updates-check-now }
-  - assert_visible: { id: pref-day.updates.check }
-  - assert_visible: { id: pref-day.updates.interval }
-  - assert_visible: { id: pref-day.updates.auto_download }
-  - assert_visible: { id: updates-last-checked }
-  - assert_text: { id: updates-status, key: day_piece_selfupdate::status_idle }
+  - wait_for: { id: updates_check_now }
+  - assert_visible: { id: pref:day.updates.check }
+  - assert_visible: { id: pref:day.updates.interval }
+  - assert_visible: { id: pref:day.updates.auto_download }
+  - assert_visible: { id: updates_last_checked }
+  - assert_text: { id: updates_status, key: day_piece_selfupdate::status_idle }
   - screenshot: { name: settings-updates, window: day.preferences }
 
   - menu: { key: day-check-for-updates }
-  - assert_text: { id: updates-status, key: day_piece_selfupdate::status_unconfigured, timeout_secs: 20 }
+  - assert_text: { id: updates_status, key: day_piece_selfupdate::status_unconfigured, timeout_secs: 20 }
   - screenshot: { name: settings-updates-checked, window: day.preferences }

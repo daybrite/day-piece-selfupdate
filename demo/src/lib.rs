@@ -33,16 +33,18 @@ pub fn root() -> impl Piece {
         .map(|c| c.version)
         .unwrap_or_else(|_| env!("CARGO_PKG_VERSION").into());
     column((
-        label(res::str::app_title()).font(Font::Title).id("title"),
-        label(res::str::version(version)).id("version"),
-        label(res::str::introduction()).id("introduction"),
+        label(res::str::app_title())
+            .font(Font::Title)
+            .id(day::id!(title)),
+        label(res::str::version(version)).id(day::id!(version)),
+        label(res::str::introduction()).id(day::id!(introduction)),
         // The same phase the Updates group shows, mirrored on the home page.
-        label(move || settings::status_text(settings::phase().get())).id("update-status"),
+        label(move || settings::status_text(settings::phase().get())).id(day::id!(update_status)),
         button(res::str::open_updates())
             .action(move || {
                 prefs.open_at("updates");
             })
-            .id("open-updates"),
+            .id(day::id!(open_updates)),
     ))
     .spacing(18.0)
     .padding(24.0)
