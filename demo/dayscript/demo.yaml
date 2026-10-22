@@ -16,6 +16,6 @@ flow:
   - assert_text: { id: updates_status, key: day_piece_selfupdate::status_idle }
   - screenshot: { name: settings-updates, window: day.preferences }
 
-  - menu: { key: day-check-for-updates }
+  - menu: { key: day_check_for_updates }
   - assert_text: { id: updates_status, key: day_piece_selfupdate::status_unconfigured, timeout_secs: 20 }
   - screenshot: { name: settings-updates-checked, window: day.preferences }

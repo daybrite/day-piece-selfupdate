@@ -127,7 +127,7 @@ pub fn phase() -> Signal<Phase> {
 // ---------------------------------------------------------------------------
 
 fn updates_group() -> Group {
-    let group = Group::new("updates", day_fluent::tr("day-settings-updates"))
+    let group = Group::new("updates", day_fluent::res::str::day_settings_updates())
         .icon(day_spec::Symbol::Refresh);
     if managed_installation() {
         return group.row(rows::note(res::str::managed()).id(day_core::id!(updates_managed)));

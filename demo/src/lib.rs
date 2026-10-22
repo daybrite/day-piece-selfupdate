@@ -24,7 +24,7 @@ pub fn root() -> impl Piece {
     // General (appearance, language) from Day; Updates arrives through the registered provider.
     let prefs = Preferences::new()
         .about(About::from_manifest().link(
-            day::tr("day-about-website"),
+            res::str::day_about_website(),
             "https://github.com/daybrite/day-piece-selfupdate",
         ))
         .group(general_group(res::locales::ALL))
