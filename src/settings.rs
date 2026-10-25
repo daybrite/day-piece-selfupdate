@@ -20,7 +20,7 @@ use day_reactive::{Scope, Signal, on_main};
 use std::cell::Cell;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-day_fluent::locales!();
+day_localization_ui::locales!();
 
 /// The persisted policy, keyed under `day.updates.*`. Apps read them like any other pref.
 pub mod prefs {
@@ -127,8 +127,11 @@ pub fn phase() -> Signal<Phase> {
 // ---------------------------------------------------------------------------
 
 fn updates_group() -> Group {
-    let group = Group::new("updates", day_fluent::res::str::day_settings_updates())
-        .icon(day_spec::Symbol::Refresh);
+    let group = Group::new(
+        "updates",
+        day_localization_ui::res::str::day_settings_updates(),
+    )
+    .icon(day_spec::Symbol::Refresh);
     if managed_installation() {
         return group.row(rows::note(res::str::managed()).id(day_core::id!(updates_managed)));
     }
@@ -279,7 +282,7 @@ fn finish(work: Work, outcome: Result<Phase, String>) {
     let phase = match outcome {
         Ok(p) => p,
         Err(e) => {
-            log::warn!("day-piece-selfupdate: {e}");
+            log::warn!("day-piece-self-update: {e}");
             if work == Work::Prepare {
                 Phase::Failed
             } else {

@@ -1,5 +1,5 @@
 //! Test-only GUI automation. Compiled into isolated CI packages, never release builds.
-use day_piece_selfupdate::{configuration, github, prepare, verification};
+use day_piece_self_update::{configuration, github, prepare, verification};
 
 pub fn start() {
     let args: Vec<_> = std::env::args().collect();

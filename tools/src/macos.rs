@@ -1,6 +1,6 @@
 // Copyright © The Daybrite Project
 // SPDX-License-Identifier: MPL-2.0
-use day_selfupdate_core::{
+use day_self_update_core::{
     Release, Result, Transaction, atomic_write, digest, hex, public_key, sign, verify,
     verify_archive,
 };
@@ -328,7 +328,7 @@ pub fn entry(args: Vec<String>) -> Result<()> {
             println!("{}", sign(&bytes, &fs::read_to_string(&args[2])?)?);
         }
         Some("verify-signature") if args.len() == 4 => {
-            day_selfupdate_core::verify_signature(
+            day_self_update_core::verify_signature(
                 &fs::read(&args[1])?,
                 &String::from_utf8(bounded(Path::new(&args[2]), 1024)?)?,
                 &args[3],

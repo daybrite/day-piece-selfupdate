@@ -1,10 +1,11 @@
 [package]
-name = "day-piece-selfupdate"
+name = "day-piece-self-update"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.89"
 license = "MPL-2.0"
 description = "Experimental Day self-update piece and macOS installer prototype"
+repository = "https://github.com/daybrite/day-piece-selfupdate"
 publish = false
 build = "build.rs"
 
@@ -20,7 +21,7 @@ ui = ["dep:day-core", "dep:day-pieces", "dep:day-reactive"]
 settings = [
     "ui",
     "dep:day-piece-settings",
-    "dep:day-fluent",
+    "dep:day-localization-ui",
     "dep:day-spec",
     "dep:day-build",
     "dep:log",
@@ -31,13 +32,13 @@ gtk = ["ui", "day-piece-settings?/gtk"]
 winui = ["ui", "day-piece-settings?/winui"]
 
 [package.metadata.day]
-compat = "0.5"
+compat = "0.6"
 
 [package.metadata.day.piece]
 backends = ["appkit", "gtk", "winui", "mock"]
 
 [dependencies]
-day-selfupdate-core = { path = "crates/update-core" }
+day-self-update-core = { path = "crates/update-core" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Canonical dependencies; use scripts/local-day.py for adjacent-checkout development.
@@ -45,7 +46,7 @@ day-core = { git = "https://github.com/daybrite/day", optional = true }
 day-pieces = { git = "https://github.com/daybrite/day", optional = true }
 day-reactive = { git = "https://github.com/daybrite/day", optional = true }
 day-piece-settings = { git = "https://github.com/daybrite/day", optional = true }
-day-fluent = { git = "https://github.com/daybrite/day", optional = true }
+day-localization-ui = { git = "https://github.com/daybrite/day", optional = true }
 day-spec = { git = "https://github.com/daybrite/day", optional = true }
 log = { version = "0.4", optional = true }
 

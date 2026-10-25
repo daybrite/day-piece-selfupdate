@@ -54,7 +54,7 @@ The harness sets `APPIMAGE_EXTRACT_AND_RUN=1`, so the genuine AppImage runtime w
 The reusable client has an explicit transport override; it does not read ambient environment variables or silently fall back from HTTPS:
 
 ```rust,ignore
-use day_piece_selfupdate::github::{Source, check_from, download_update_from};
+use day_piece_self_update::github::{Source, check_from, download_update_from};
 let source = Source::Directory(feed_directory);
 if let Some(update) = check_from(&configuration, &source)? {
     download_update_from(&configuration, &update, &source)?;

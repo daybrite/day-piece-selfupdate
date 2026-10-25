@@ -8,7 +8,7 @@ packages = {tomllib.loads(p.read_text()).get('package', {}).get('name'): p.paren
             for group in ('crates', 'pieces', 'parts', 'toolkits')
             for p in (day / group).glob('*/Cargo.toml')}
 for directory in [root, root / 'demo']:
-    names = ['day-core', 'day-pieces', 'day-reactive', 'day-piece-settings', 'day-fluent',
+    names = ['day-core', 'day-pieces', 'day-reactive', 'day-piece-settings', 'day-localization-ui',
              'day-spec', 'day-build']
     if directory != root: names += ['day']
     patches = [f'{name} = {{ path = "{packages[name]}" }}' for name in names]

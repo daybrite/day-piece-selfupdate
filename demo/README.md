@@ -1,10 +1,10 @@
 # Self Update Demo
 
-A standard localized Day app for macOS AppKit, Windows WinUI, and Linux GTK. It checks the latest stable release of `daybrite/day-piece-selfupdate`, downloads a verified update, and lets the user quit to install and reopen it.
+A standard localized Day app for macOS AppKit, Windows WinUI, and Linux GTK. It checks the latest stable release of `daybrite/day-piece-self-update`, downloads a verified update, and lets the user quit to install and reopen it.
 
 The app installs `Preferences` with Day's General group; the **Updates** group (automatic
 checks, frequency, background downloads, last checked, Check now) and the **Check for Updates…**
-menu item come from the `day-piece-selfupdate` settings provider. The home page mirrors the
+menu item come from the `day-piece-self-update` settings provider. The home page mirrors the
 updater's status and has a button that opens the group.
 
 See [signing and release setup](../docs/RELEASING.md) before publishing. The macOS app is sandboxed. Initial Windows installations use the per-user NSIS package; Linux uses the AppImage. Flatpak, Snap, and MSIX installations do not self-replace.

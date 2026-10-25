@@ -34,7 +34,7 @@ fn agent() -> ureq::Agent {
     ureq::Agent::config_builder()
         .timeout_global(Some(std::time::Duration::from_secs(300)))
         .https_only(true)
-        .user_agent("day-piece-selfupdate/0.1")
+        .user_agent("day-piece-self-update/0.1")
         .build()
         .into()
 }

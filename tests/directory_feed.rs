@@ -1,6 +1,6 @@
 #![cfg(feature = "github")]
 //! Synthetic signed fixtures; no network or native installer needed.
-use day_piece_selfupdate::{
+use day_piece_self_update::{
     Configuration,
     github::{Source, check_from, download_update_from},
     verification::{self, Release},

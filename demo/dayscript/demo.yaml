@@ -3,7 +3,7 @@
 # Updates… menu command. A development build has no signing key, so a check ends "unconfigured".
 flow:
   - wait_for: { id: open_updates }
-  - assert_text: { id: home_update_status, key: day_piece_selfupdate::status_idle }
+  - assert_text: { id: home_update_status, key: day_piece_self_update::status_idle }
   - screenshot: selfupdate-home
 
   # The provider's group id is a route of the Settings window; the window captures by its key.
@@ -13,9 +13,9 @@ flow:
   - assert_visible: { id: pref:day.updates.interval }
   - assert_visible: { id: pref:day.updates.auto_download }
   - assert_visible: { id: updates_last_checked }
-  - assert_text: { id: updates_status, key: day_piece_selfupdate::status_idle }
+  - assert_text: { id: updates_status, key: day_piece_self_update::status_idle }
   - screenshot: { name: settings-updates, window: day.preferences }
 
   - menu: { key: day_check_for_updates }
-  - assert_text: { id: updates_status, key: day_piece_selfupdate::status_unconfigured, timeout_secs: 20 }
+  - assert_text: { id: updates_status, key: day_piece_self_update::status_unconfigured, timeout_secs: 20 }
   - screenshot: { name: settings-updates-checked, window: day.preferences }

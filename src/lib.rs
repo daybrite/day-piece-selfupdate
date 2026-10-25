@@ -1,7 +1,7 @@
 // Copyright © The Daybrite Project
 // SPDX-License-Identifier: MPL-2.0
 //! Experimental local signed-update client. No automatic network discovery or installation.
-pub use day_selfupdate_core as verification;
+pub use day_self_update_core as verification;
 #[cfg(feature = "github")]
 pub mod github;
 mod portable;

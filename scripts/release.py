@@ -45,7 +45,7 @@ def configure(target):
     values = dict(DAY_UPDATE_APPLICATION_ID=app['id'],
                   DAY_UPDATE_BUILD=str(app['build']), DAY_UPDATE_VERSION=version,
                   DAY_UPDATE_PUBLIC_KEY=key, DAY_UPDATE_TARGET=triple,
-                  DAY_UPDATE_REPOSITORY=os.environ.get('GITHUB_REPOSITORY', 'daybrite/day-piece-selfupdate'))
+                  DAY_UPDATE_REPOSITORY=os.environ.get('GITHUB_REPOSITORY', 'daybrite/day-piece-self-update'))
     path = os.environ.get('GITHUB_ENV')
     if path:
         with open(path, 'a') as stream:
@@ -91,7 +91,7 @@ def stage(target):
         info_path = bundle / 'Contents/Info.plist'
         info = plist(info_path)
         info.update(DYSUPublicKey=key, DYSUDevelopment=not release, DYSUTarget=triple,
-                    DYSURepository=os.environ.get('GITHUB_REPOSITORY', 'daybrite/day-piece-selfupdate'),
+                    DYSURepository=os.environ.get('GITHUB_REPOSITORY', 'daybrite/day-piece-self-update'),
                     DYSUServiceIdentifier=service_id, DYSUServiceRequirement=f'identifier "{service_id}"{anchor}')
         plist(info_path, info)
         run('/usr/bin/codesign', '--force', '--sign', '-', helpers / helper.name)

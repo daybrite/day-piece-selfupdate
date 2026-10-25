@@ -1,8 +1,8 @@
 //! Self-update demo. The Updates settings group, the Check for Updates… menu item, and the
-//! check scheduler all come from day-piece-selfupdate's settings provider; this app only
+//! check scheduler all come from day-piece-self-update's settings provider; this app only
 //! installs Preferences. All app-owned UI text comes from generated resources.
 use day::prelude::*;
-use day_piece_selfupdate::{configuration, prepare, settings};
+use day_piece_self_update::{configuration, prepare, settings};
 use day_piece_settings::prelude::*;
 
 #[cfg(feature = "e2e")]

@@ -1,4 +1,6 @@
-use day_selfupdate_core::{Release, Result, digest, hex, public_key, sign, verify, verify_archive};
+use day_self_update_core::{
+    Release, Result, digest, hex, public_key, sign, verify, verify_archive,
+};
 use std::{
     fs::{self, OpenOptions},
     io::Write,
@@ -37,7 +39,7 @@ fn entry() -> Result<()> {
             sign(&fs::read(&args[1])?, &fs::read_to_string(&args[2])?)?
         ),
         Some("verify-signature") if args.len() == 4 => {
-            day_selfupdate_core::verify_signature(
+            day_self_update_core::verify_signature(
                 &fs::read(&args[1])?,
                 &fs::read_to_string(&args[2])?,
                 &args[3],
@@ -86,13 +88,13 @@ fn entry() -> Result<()> {
         Some("recover-desktop") if args.len() == 3 => {
             let destination = std::path::PathBuf::from(&args[1]);
             let session = std::path::PathBuf::from(&args[2]);
-            day_selfupdate_core::desktop::private_directory(&session)?;
+            day_self_update_core::desktop::private_directory(&session)?;
             let lock = OpenOptions::new()
                 .read(true)
                 .write(true)
                 .open(session.join("lock"))?;
             lock.try_lock()?;
-            let t = day_selfupdate_core::Transaction {
+            let t = day_self_update_core::Transaction {
                 target: destination,
                 stage: session.join("interrupted"),
                 backup: session.join("previous"),
@@ -101,11 +103,11 @@ fn entry() -> Result<()> {
             println!("{}", t.recover()?);
         }
         Some("desktop-install") if args.len() == 2 => {
-            let request = serde_json::from_slice(&day_selfupdate_core::desktop::read_limited(
+            let request = serde_json::from_slice(&day_self_update_core::desktop::read_limited(
                 Path::new(&args[1]),
                 65536,
             )?)?;
-            day_selfupdate_core::desktop::install(&request)?;
+            day_self_update_core::desktop::install(&request)?;
         }
         _ => {
             #[cfg(target_os = "macos")]

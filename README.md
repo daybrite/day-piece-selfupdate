@@ -1,4 +1,4 @@
-# day-piece-selfupdate
+# day-piece-self-update
 
 A native Day update panel and desktop self-update backends, with a standard `demo/` app and an official GitHub release workflow.
 
@@ -24,7 +24,7 @@ the provider registers itself at link time, and `Preferences::new().install()` p
 | Status, and a button that reads Check now, Download update, or Quit and install as the phase moves | |
 
 On a Flatpak, Snap, or MSIX installation the group reduces to one note saying the store or
-package manager handles updates. The prefs are `day_piece_selfupdate::settings::prefs::*`;
+package manager handles updates. The prefs are `day_piece_self_update::settings::prefs::*`;
 `settings::phase()` is the live `Phase` for an app that mirrors it elsewhere.
 
 The provider also registers the **Check for Updates…** menu item (`day::register_check_for_updates`),
