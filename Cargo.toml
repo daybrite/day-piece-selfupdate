@@ -6,7 +6,6 @@ rust-version = "1.89"
 license = "MPL-2.0"
 description = "Experimental Day self-update piece and macOS installer prototype"
 repository = "https://github.com/daybrite/day-piece-selfupdate"
-publish = false
 build = "build.rs"
 
 [workspace]
@@ -38,21 +37,21 @@ compat = "0.6"
 backends = ["appkit", "gtk", "winui", "mock"]
 
 [dependencies]
-day-self-update-core = { path = "crates/update-core" }
+day-self-update-core = { path = "crates/update-core", version = "0.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Canonical dependencies; use scripts/local-day.py for adjacent-checkout development.
-day-core = { git = "https://github.com/daybrite/day", optional = true }
-day-pieces = { git = "https://github.com/daybrite/day", optional = true }
-day-reactive = { git = "https://github.com/daybrite/day", optional = true }
-day-piece-settings = { git = "https://github.com/daybrite/day", optional = true }
-day-localization-ui = { git = "https://github.com/daybrite/day", optional = true }
-day-spec = { git = "https://github.com/daybrite/day", optional = true }
+day-core = { version = "0.6", optional = true }
+day-pieces = { version = "0.6", optional = true }
+day-reactive = { version = "0.6", optional = true }
+day-piece-settings = { version = "0.6", optional = true }
+day-localization-ui = { version = "0.6", optional = true }
+day-spec = { version = "0.6", optional = true }
 log = { version = "0.4", optional = true }
 
 [build-dependencies]
 cc = "1"
-day-build = { git = "https://github.com/daybrite/day", optional = true }
+day-build = { version = "0.6", optional = true }
 
 [dependencies.ureq]
 version = "3.4"

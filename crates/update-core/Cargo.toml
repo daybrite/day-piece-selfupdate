@@ -3,7 +3,9 @@ name = "day-self-update-core"
 version = "0.1.0"
 edition = "2024"
 license = "MPL-2.0"
-publish = false
+description = "Update manifests, signatures and staging for the Day self-update piece"
+repository = "https://github.com/daybrite/day-piece-selfupdate"
+homepage = "https://daybrite.dev"
 
 [dependencies]
 ed25519-dalek = "2.2"

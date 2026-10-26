@@ -40,7 +40,7 @@ def binary(app):
 
 def build():
     run('cargo', 'build', '--workspace', '--offline', cwd=ROOT)
-    run(DAY, '--project', ROOT / 'demo', 'build', '-p', 'macos-appkit', env={**os.environ, 'CARGO_NET_OFFLINE': 'true'})
+    run(DAY, '--project', ROOT / 'demo', 'build', '--target', 'macos-appkit', env={**os.environ, 'CARGO_NET_OFFLINE': 'true'})
     BUILD.mkdir(parents=True, exist_ok=True)
     run('xcrun', 'clang', '-fobjc-arc', '-fblocks', '-mmacosx-version-min=13.0',
         '-framework', 'Foundation', ROOT / 'platform/macos/service.m', '-o', BUILD / 'Launcher')

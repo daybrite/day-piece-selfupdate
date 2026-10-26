@@ -4,7 +4,15 @@ on:
     branches: [main]
     tags: ['v[0-9]+.[0-9]+.[0-9]+*']
   pull_request:
+  # Nightly, against the newest day release: what someone who builds this gets.
+  schedule:
+    - cron: "0 7 * * *"
   workflow_dispatch:
+    inputs:
+      day-main:
+        description: Build against day's main branch instead of the newest release
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -19,6 +27,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      # Day from crates.io, or from main on a push (daybrite/actions day-deps).
+      - uses: daybrite/actions/.github/actions/day-deps@v1
+        with:
+          day-deps: ${{ inputs.day-main && 'main' || 'auto' }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo test --workspace
@@ -90,6 +102,10 @@ jobs:
             xcrun clang --version
           } 2>&1 | tee build/e2e/macos-appkit/toolchain.log
       - uses: dtolnay/rust-toolchain@stable
+      # Day from crates.io, or from main on a push (daybrite/actions day-deps).
+      - uses: daybrite/actions/.github/actions/day-deps@v1
+        with:
+          day-deps: ${{ inputs.day-main && 'main' || 'auto' }}
       - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
@@ -144,11 +160,14 @@ jobs:
     uses: daybrite/actions/.github/workflows/dayapp.yml@v1
     permissions:
       contents: write
+      id-token: write # crates.io Trusted Publishing (publish-crates)
     secrets: inherit
     with:
       project-path: demo
       targets: macos-appkit, windows-winui, linux-gtk
-      update-day-deps: true
+      day-deps: ${{ inputs.day-main && 'main' || 'auto' }}
+      # On a version tag, after every leg passed: the library crates to crates.io.
+      publish-crates: true
       scripts: dayscript/demo.yaml
       target-setup: |
         macos-appkit: DAY_UPDATE_PUBLIC_KEY='${{ vars.DAY_UPDATE_PUBLIC_KEY }}' DAY_UPDATE_APPLE_TEAM='${{ vars.DAY_UPDATE_APPLE_TEAM }}' python3 scripts/release.py configure macos-appkit

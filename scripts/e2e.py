@@ -146,7 +146,7 @@ def build(day):
         if dist.exists():
             shutil.rmtree(dist)
         formats = {'macos-appkit': 'dmg', 'windows-winui': 'nsis', 'linux-gtk': 'appimage'}[TARGET]
-        run(day, '--project', WORK / 'demo', 'pack', '-p', TARGET, '--profile', 'release',
+        run(day, '--project', WORK / 'demo', 'pack', '--target', TARGET, '--profile', 'release',
             '--formats', formats, '--no-sign', '--no-notarize', cwd=WORK / 'demo')
         run(sys.executable, WORK / 'scripts/release.py', 'stage', TARGET, cwd=WORK)
         saved = BASE / version

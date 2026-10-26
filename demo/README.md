@@ -12,7 +12,7 @@ See [signing and release setup](../docs/RELEASING.md) before publishing. The mac
 For local UI development, from this directory:
 
 ```sh
-../../day/target/debug/day launch -p macos-appkit --script dayscript/demo.yaml
+../../day/target/debug/day launch -t macos-appkit --script dayscript/demo.yaml
 ```
 
 For the local macOS fixture without release credentials:
