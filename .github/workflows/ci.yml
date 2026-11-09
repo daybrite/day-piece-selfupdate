@@ -6,7 +6,8 @@ on:
   pull_request:
   # Nightly, against the newest day release: what someone who builds this gets.
   schedule:
-    - cron: "0 7 * * *"
+    - cron: "0 0 * * *" # 00:00 Eastern; staggered across daybrite.
+      timezone: America/New_York
   workflow_dispatch:
     inputs:
       day-main:
@@ -54,19 +55,8 @@ jobs:
             target: macos-appkit
             label: macos-appkit
             artifact: update-e2e-macos-appkit
-          # Advisory back-deployment leg: an app built with the newest Xcode the macos-15 image
-          # carries (26.3, SDK 26.2; its default Xcode 16.4 cannot link Day) and installed on
-          # that macOS 15 host. Its first run died with SIGABRT in the installed 1.0.0 app
-          # before `--selfupdate-probe` printed anything, and the harness discarded stderr;
-          # the reports it uploads now include that stderr, the executable's dylib
-          # dependencies and the host's crash reports. It stays advisory until that
-          # evidence names the cause: a failure here must not block the demo release leg.
-          - os: macos-15
-            target: macos-appkit
-            label: macos-appkit, macOS 15 host (advisory)
-            artifact: update-e2e-macos-appkit-macos-15
-            xcode: '26.3'
-            advisory: true
+          # Day's generated project.xcproj requires Xcode 27. Testing an older macOS
+          # runtime must install an artifact built above, not rebuild it with Xcode 26.
           - os: windows-latest
             target: windows-winui
             label: windows-winui
@@ -76,24 +66,14 @@ jobs:
             label: linux-gtk
             artifact: update-e2e-linux-gtk
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.advisory == true }}
     # No release environment or secrets: each run generates a disposable Ed25519 key.
     steps:
       - uses: actions/checkout@v7
       - name: Record the macOS build toolchain
         if: runner.os == 'macOS'
         shell: bash
-        env:
-          XCODE_VERSION: ${{ matrix.xcode }}
         run: |
           set -euo pipefail
-          # A row that names an Xcode version selects that install explicitly (macos-15
-          # defaults to 16.4 / SDK 15.5); the xcode-27 runner's default is the one wanted.
-          if [ -n "$XCODE_VERSION" ]; then
-            export DEVELOPER_DIR="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
-            test -d "$DEVELOPER_DIR"
-            echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
-          fi
           mkdir -p build/e2e/macos-appkit
           {
             sw_vers
@@ -118,7 +98,7 @@ jobs:
         id: day-cli
       - uses: actions/cache@v6
         with:
-          key: update-e2e-${{ runner.os }}-${{ runner.arch }}-${{ matrix.xcode || 'default' }}-${{ steps.day-cli.outputs.commit }}-${{ hashFiles('**/Cargo.toml') }}
+          key: update-e2e-${{ runner.os }}-${{ runner.arch }}-${{ steps.day-cli.outputs.commit }}-${{ hashFiles('**/Cargo.toml') }}
           path: |
             build/e2e/${{ matrix.target }}/workspace/target
             build/e2e/${{ matrix.target }}/workspace/demo/build/day/cargo
@@ -156,18 +136,18 @@ jobs:
             build/e2e/${{ matrix.target }}/toolchain.log
           if-no-files-found: warn
   demo:
+    # Library tags need no signing credentials. Publishing installable update-demo assets is
+    # an explicit opt-in after configuring the trust anchor and release-signing environment.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') || vars.DAY_SELFUPDATE_RELEASE_DEMO == 'true' }}
     needs: [host, update-e2e]
     uses: daybrite/actions/.github/workflows/dayapp.yml@v1
     permissions:
       contents: write
-      id-token: write # crates.io Trusted Publishing (publish-crates)
     secrets: inherit
     with:
       project-path: demo
       targets: macos-appkit, windows-winui, linux-gtk
       day-deps: ${{ inputs.day-main && 'main' || 'auto' }}
-      # On a version tag, after every leg passed: the library crates to crates.io.
-      publish-crates: true
       scripts: dayscript/demo.yaml
       target-setup: |
         macos-appkit: DAY_UPDATE_PUBLIC_KEY='${{ vars.DAY_UPDATE_PUBLIC_KEY }}' DAY_UPDATE_APPLE_TEAM='${{ vars.DAY_UPDATE_APPLE_TEAM }}' python3 scripts/release.py configure macos-appkit
@@ -182,3 +162,21 @@ jobs:
       upload-ios: 'false'
       upload-macos: 'false'
       upload-play: 'false'
+
+  # On a version tag, once the checks above passed: the crates to crates.io, through
+  # Trusted Publishing (daybrite/actions' publish-crates). It does not wait for the demo legs,
+  # whose emulators and packaging gate the demo's release, not the library's. Each crate's trusted
+  # publisher on crates.io names this repository, ci.yml, and the environment `release`.
+  publish:
+    name: publish (crates.io)
+    needs: [host]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: daybrite/actions/.github/actions/publish-crates@v1

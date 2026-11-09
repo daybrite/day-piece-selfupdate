@@ -1,6 +1,19 @@
 # Signing and testing official demo releases
 
-The repository is `daybrite/day-piece-self-update`. Its `release-signing` GitHub environment admits `v*` tags. No source has been committed or pushed by this task, and no release or signing credential has been published. The changes to `daybrite/actions` must be reviewed and published before this workflow can use their new inputs through `@v1`.
+The repository is `daybrite/day-piece-selfupdate`. Its `release-signing` GitHub environment admits `v*` tags. No source has been committed or pushed by this task, and no release or signing credential has been published. The changes to `daybrite/actions` must be reviewed and published before this workflow can use their new inputs through `@v1`.
+
+## Library releases and demo releases
+
+Version tags publish the library crates after the host checks. The packaged update tests still
+run on tags, and ordinary branch/PR runs still build and exercise the demo. Signed demo release
+assets are opt-in: after completing the credential setup below, enable them with:
+
+```sh
+gh variable set DAY_SELFUPDATE_RELEASE_DEMO --repo daybrite/day-piece-selfupdate --body true
+```
+
+Leave this variable unset for a library-only release. Enabling it makes missing or invalid
+signing credentials fail the demo release; it never falls back to an unsigned update.
 
 ## Credentials: two independent signatures
 
@@ -19,10 +32,10 @@ The command prints only the **public** key; the file contains the private 32-byt
 
 ```sh
 gh secret set DAY_UPDATE_PRIVATE_KEY \
-  --repo daybrite/day-piece-self-update --env release-signing \
+  --repo daybrite/day-piece-selfupdate --env release-signing \
   < ~/.config/day/signing/selfupdate-demo.key
 
-gh variable set DAY_UPDATE_PUBLIC_KEY --repo daybrite/day-piece-self-update \
+gh variable set DAY_UPDATE_PUBLIC_KEY --repo daybrite/day-piece-selfupdate \
   --body "$(target/debug/day-selfupdate-tool public-key ~/.config/day/signing/selfupdate-demo.key)"
 ```
 
@@ -54,20 +67,20 @@ GitHub exposes secret names, not values: the existing Day-Showcase environment c
 
 ```sh
 base64 -i /path/to/AppFair-DeveloperID.p12 | gh secret set DAY_MACOS_CERT_P12 \
-  --repo daybrite/day-piece-self-update --env release-signing
+  --repo daybrite/day-piece-selfupdate --env release-signing
 base64 -i /path/to/AuthKey_KEYID.p8 | gh secret set DAY_NOTARY_KEY_B64 \
-  --repo daybrite/day-piece-self-update --env release-signing
+  --repo daybrite/day-piece-selfupdate --env release-signing
 # Interactive prompts avoid placing sensitive values in shell command history:
-gh secret set DAY_MACOS_CERT_PASSWORD --repo daybrite/day-piece-self-update --env release-signing
-gh secret set DAY_SIGN_MACOS_IDENTITY --repo daybrite/day-piece-self-update --env release-signing
-gh secret set DAY_NOTARY_KEY_ID --repo daybrite/day-piece-self-update --env release-signing
-gh secret set DAY_NOTARY_ISSUER --repo daybrite/day-piece-self-update --env release-signing
+gh secret set DAY_MACOS_CERT_PASSWORD --repo daybrite/day-piece-selfupdate --env release-signing
+gh secret set DAY_SIGN_MACOS_IDENTITY --repo daybrite/day-piece-selfupdate --env release-signing
+gh secret set DAY_NOTARY_KEY_ID --repo daybrite/day-piece-selfupdate --env release-signing
+gh secret set DAY_NOTARY_ISSUER --repo daybrite/day-piece-selfupdate --env release-signing
 ```
 
 Also set the **public** `DAY_UPDATE_APPLE_TEAM` repository variable to the ten-character Team ID on that Developer ID certificate:
 
 ```sh
-gh variable set DAY_UPDATE_APPLE_TEAM --repo daybrite/day-piece-self-update --body YOURTEAMID
+gh variable set DAY_UPDATE_APPLE_TEAM --repo daybrite/day-piece-selfupdate --body YOURTEAMID
 ```
 
 This binds both XPC peers to the expected Apple signing anchor, Team ID, and bundle identifier. It must match the imported certificate. A tag build fails if public signing configuration is absent, and signing fails if the private credentials are absent or inconsistent.

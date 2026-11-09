@@ -31,27 +31,27 @@ gtk = ["ui", "day-piece-settings?/gtk"]
 winui = ["ui", "day-piece-settings?/winui"]
 
 [package.metadata.day]
-compat = "0.6"
+compat = "0.*"
 
 [package.metadata.day.piece]
 backends = ["appkit", "gtk", "winui", "mock"]
 
 [dependencies]
-day-self-update-core = { path = "crates/update-core", version = "0.1" }
+day-self-update-core = { path = "crates/update-core", version = "0.*" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Canonical dependencies; use scripts/local-day.py for adjacent-checkout development.
-day-core = { version = "0.6", optional = true }
-day-pieces = { version = "0.6", optional = true }
-day-reactive = { version = "0.6", optional = true }
-day-piece-settings = { version = "0.6", optional = true }
-day-localization-ui = { version = "0.6", optional = true }
-day-spec = { version = "0.6", optional = true }
+day-core = { version = "0.*", optional = true }
+day-pieces = { version = "0.*", optional = true }
+day-reactive = { version = "0.*", optional = true }
+day-piece-settings = { version = "0.*", optional = true }
+day-localization-ui = { version = "0.*", optional = true }
+day-spec = { version = "0.*", optional = true }
 log = { version = "0.4", optional = true }
 
 [build-dependencies]
 cc = "1"
-day-build = { version = "0.6", optional = true }
+day-build = { version = "0.*", optional = true }
 
 [dependencies.ureq]
 version = "3.4"

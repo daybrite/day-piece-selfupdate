@@ -126,7 +126,8 @@ pub fn check_from(config: &Configuration, source: &Source) -> Result<Option<Upda
     if release.schema != 2 || release.target != config.target || release.tag != info.tag_name {
         return Err("release platform or tag mismatch".into());
     }
-    if release.build <= config.build.parse()? {
+    // Named, because glib's `PartialOrd<ULong> for c_ulong` leaves `u64 <= _` ambiguous.
+    if release.build <= config.build.parse::<u64>()? {
         return Ok(None);
     }
     Ok(Some(Update {
