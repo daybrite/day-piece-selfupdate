@@ -19,3 +19,10 @@ flow:
   - menu: { key: day_check_for_updates }
   - assert_text: { id: updates_status, key: day_piece_self_update::status_unconfigured, timeout_secs: 20 }
   - screenshot: { name: settings-updates-checked, window: day.preferences }
+
+  # The action must stay visible and usable when its busy spinner is absent, both before
+  # the first check (above) and after a check has finished.
+  - wait_for: { id: updates_check_now }
+  - tap: { id: updates_check_now }
+  - assert_text: { id: updates_status, key: day_piece_self_update::status_unconfigured, timeout_secs: 20 }
+  - wait_for: { id: updates_check_now }
