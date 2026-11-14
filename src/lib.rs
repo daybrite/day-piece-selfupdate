@@ -48,6 +48,9 @@ fn native_string(value: *mut std::ffi::c_char) -> verification::Result<String> {
     Ok(result)
 }
 
+/// # Errors
+///
+/// Returns an error when the platform configuration cannot be read or is invalid.
 pub fn configuration() -> verification::Result<Configuration> {
     #[cfg(target_os = "macos")]
     {
@@ -62,6 +65,10 @@ pub fn configuration() -> verification::Result<Configuration> {
     }
 }
 
+/// # Errors
+///
+/// Returns an error when `release.json` or `release.sig` cannot be read from the inbox, or the
+/// release fails verification.
 pub fn check(config: &Configuration) -> verification::Result<verification::Release> {
     use std::io::Read;
     let mut bytes = Vec::new();
@@ -83,6 +90,10 @@ pub fn check(config: &Configuration) -> verification::Result<verification::Relea
 
 /// Runs off the UI thread. `ready` means the installer verified/staged the update and is
 /// waiting for this process to quit. It does NOT mean the update has been installed.
+///
+/// # Errors
+///
+/// Returns an error when the release fails verification or the installer cannot stage it.
 pub fn prepare(config: &Configuration) -> verification::Result<String> {
     #[cfg(target_os = "macos")]
     {

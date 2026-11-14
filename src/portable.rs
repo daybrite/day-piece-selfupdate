@@ -8,9 +8,7 @@ use crate::{
 pub fn configuration() -> Result<Configuration> {
     let executable = std::env::current_exe()?;
     let bundle = if cfg!(target_os = "linux") {
-        std::env::var_os("APPIMAGE")
-            .map(std::path::PathBuf::from)
-            .unwrap_or(executable)
+        std::env::var_os("APPIMAGE").map_or(executable, std::path::PathBuf::from)
     } else {
         executable
     };
@@ -48,7 +46,7 @@ pub fn managed_installation() -> bool {
         // SAFETY: a null buffer and zero length queries package identity without writing a buffer.
         (unsafe {
             windows_sys::Win32::Storage::Packaging::Appx::GetCurrentPackageFullName(
-                &mut length,
+                &raw mut length,
                 std::ptr::null_mut(),
             )
         }) != 15700

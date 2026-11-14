@@ -32,7 +32,7 @@ fn entry() -> Result<()> {
             println!("{}", public_key(&hex(&seed))?);
         }
         Some("public-key") if args.len() == 2 => {
-            println!("{}", public_key(&fs::read_to_string(&args[1])?)?)
+            println!("{}", public_key(&fs::read_to_string(&args[1])?)?);
         }
         Some("sign") if args.len() == 3 => println!(
             "{}",
@@ -112,7 +112,7 @@ fn entry() -> Result<()> {
         _ => {
             #[cfg(target_os = "macos")]
             {
-                return macos::entry(args);
+                return macos::entry(&args);
             }
             #[cfg(not(target_os = "macos"))]
             {

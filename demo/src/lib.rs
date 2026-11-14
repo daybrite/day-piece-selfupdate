@@ -29,9 +29,7 @@ pub fn root() -> impl Piece {
         ))
         .group(general_group(res::locales::ALL))
         .install();
-    let version = configuration()
-        .map(|c| c.version)
-        .unwrap_or_else(|_| env!("CARGO_PKG_VERSION").into());
+    let version = configuration().map_or_else(|_| env!("CARGO_PKG_VERSION").into(), |c| c.version);
     column((
         label(res::str::app_title())
             .font(Font::Title)
@@ -52,6 +50,11 @@ pub fn root() -> impl Piece {
 }
 
 /// Fixture driver calls the same native client as the visible UI.
+///
+/// # Panics
+///
+/// Panics when the bundle path has no parent directory or the configuration cannot be serialized as
+/// JSON.
 pub fn fixture_command() -> bool {
     let args: Vec<String> = std::env::args().collect();
     if args.iter().any(|s| s == "--selfupdate-probe") {

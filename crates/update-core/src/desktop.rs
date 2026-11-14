@@ -20,6 +20,10 @@ pub struct Request {
     pub caller_pid: u32,
 }
 
+/// # Errors
+///
+/// Returns an error when `path` is not a regular file, cannot be read, or holds more than `limit`
+/// bytes.
 pub fn read_limited(path: &Path, limit: u64) -> Result<Vec<u8>> {
     use std::io::Read;
     if !fs::symlink_metadata(path)?.is_file() {
@@ -33,6 +37,9 @@ pub fn read_limited(path: &Path, limit: u64) -> Result<Vec<u8>> {
     Ok(bytes)
 }
 
+/// # Errors
+///
+/// Returns an error when `id` is not a safe name or `destination` has no parent directory.
 pub fn session_path(destination: &Path, id: &str) -> Result<PathBuf> {
     if !crate::safe_name(id) {
         return Err("invalid application identity".into());
@@ -43,6 +50,10 @@ pub fn session_path(destination: &Path, id: &str) -> Result<PathBuf> {
         .join(format!(".day-selfupdate-{id}")))
 }
 
+/// # Errors
+///
+/// Returns an error when the directory cannot be created, is not a directory, or on Unix is not
+/// owned by this user and private to it.
 pub fn private_directory(path: &Path) -> Result<()> {
     #[allow(unused_mut)]
     let mut builder = fs::DirBuilder::new();
@@ -72,6 +83,10 @@ pub fn private_directory(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// # Errors
+///
+/// Returns an error when the request is invalid for this platform, the release or its archive fails
+/// verification, or the installation itself fails.
 pub fn install(request: &Request) -> Result<()> {
     if request.caller_pid <= 1 || request.caller_pid == std::process::id() {
         return Err("invalid caller PID".into());
@@ -269,6 +284,14 @@ impl Caller {
             Err("unsupported helper platform".into())
         }
     }
+    #[cfg_attr(
+        not(any(windows, target_os = "linux")),
+        expect(
+            clippy::unnecessary_wraps,
+            clippy::unused_self,
+            reason = "the Windows and Linux arms wait on the handle and can fail"
+        )
+    )]
     fn wait(&self) -> Result<()> {
         #[cfg(windows)]
         {
@@ -289,7 +312,7 @@ impl Caller {
                 revents: 0,
             };
             // SAFETY: one live pollfd entry.
-            if unsafe { libc::poll(&mut fd, 1, 90_000) } != 1 {
+            if unsafe { libc::poll(&raw mut fd, 1, 90_000) } != 1 {
                 return Err("caller did not exit within 90 seconds".into());
             }
         }
@@ -305,6 +328,10 @@ impl Drop for Caller {
     }
 }
 
+/// # Errors
+///
+/// Returns an error when the file cannot be read or its size or SHA-256 digest differs from the
+/// asset's.
 pub fn verify_file(path: &Path, asset: &crate::Asset) -> Result<()> {
     let (size, sha256) = digest(path)?;
     if size != asset.size || sha256 != asset.sha256 {

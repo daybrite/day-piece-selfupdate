@@ -96,9 +96,10 @@ thread_local! {
 }
 
 fn state() -> State {
-    STATE.with(|s| match s.get() {
-        Some(st) => st,
-        None => {
+    STATE.with(|s| {
+        if let Some(st) = s.get() {
+            st
+        } else {
             let st = State {
                 phase: Signal::global(Phase::Idle),
                 busy: Signal::global(false),
@@ -113,8 +114,7 @@ fn state() -> State {
 fn now() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
+        .map_or(0, |d| d.as_secs() as i64)
 }
 
 /// The current phase of the updater, for an app that mirrors it elsewhere (a status item).
@@ -127,6 +127,7 @@ pub fn phase() -> Signal<Phase> {
 // ---------------------------------------------------------------------------
 
 fn updates_group() -> Group {
+    use prefs::Interval;
     let group = Group::new(
         "updates",
         day_localization_ui::res::str::day_settings_updates(),
@@ -136,7 +137,6 @@ fn updates_group() -> Group {
         return group.row(rows::note(res::str::managed()).id(day_core::id!(updates_managed)));
     }
     let st = state();
-    use prefs::Interval;
     group
         .row(rows::toggle(
             &prefs::CHECK_AUTOMATICALLY,

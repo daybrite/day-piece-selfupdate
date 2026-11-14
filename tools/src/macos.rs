@@ -185,10 +185,10 @@ fn extract(payload: &Path, stage: &Path, app_name: &str) -> Result<()> {
             .checked_sub(entry.size())
             .ok_or("expanded archive exceeds limit")?;
         let mode = entry.unix_mode().unwrap_or(0o644);
-        let kind = mode & 0o170000;
+        let kind = mode & 0o170_000;
         if entry.is_dir() {
             fs::create_dir_all(&destination)?;
-        } else if kind == 0o120000 {
+        } else if kind == 0o120_000 {
             if !path.starts_with(app_name) {
                 return Err("metadata symlink rejected".into());
             }
@@ -201,7 +201,7 @@ fn extract(payload: &Path, stage: &Path, app_name: &str) -> Result<()> {
                 return Err("absolute symlink target".into());
             }
             links.push((destination, target));
-        } else if kind == 0 || kind == 0o100000 {
+        } else if kind == 0 || kind == 0o100_000 {
             fs::create_dir_all(destination.parent().ok_or("missing archive parent")?)?;
             let mut output = OpenOptions::new()
                 .write(true)
@@ -314,7 +314,7 @@ fn install(host: &Path, inbox: &Path, pid: i32, session: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn entry(args: Vec<String>) -> Result<()> {
+pub fn entry(args: &[String]) -> Result<()> {
     match args.first().map(String::as_str) {
         Some("keygen") if args.len() == 2 => {
             let mut secret = [0;32]; File::open("/dev/urandom")?.read_exact(&mut secret)?;

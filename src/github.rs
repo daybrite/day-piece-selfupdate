@@ -98,10 +98,17 @@ impl Source {
     }
 }
 
+/// # Errors
+///
+/// Returns the errors [`check_from`] returns.
 pub fn check(config: &Configuration) -> Result<Option<Update>> {
     check_from(config, &Source::Github)
 }
 
+/// # Errors
+///
+/// Returns an error when the release feed cannot be fetched or parsed, or the release metadata
+/// fails verification.
 pub fn check_from(config: &Configuration, source: &Source) -> Result<Option<Update>> {
     let info: GithubRelease =
         serde_json::from_slice(&source.get(config, None, "latest.json", 1024 * 1024)?)?;
@@ -154,10 +161,17 @@ fn download(
     verification::desktop::verify_file(destination, asset)
 }
 
+/// # Errors
+///
+/// Returns the errors [`download_update_from`] returns.
 pub fn download_update(config: &Configuration, update: &Update) -> Result<()> {
     download_update_from(config, update, &Source::Github)
 }
 
+/// # Errors
+///
+/// Returns an error when the update's metadata fails verification, or an asset cannot be downloaded
+/// or does not match its recorded size and digest.
 pub fn download_update_from(
     config: &Configuration,
     update: &Update,

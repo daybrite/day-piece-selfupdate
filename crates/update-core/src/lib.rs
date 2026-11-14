@@ -6,6 +6,7 @@
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::fmt::Write as _;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
@@ -49,6 +50,10 @@ pub fn safe_name(name: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || b"._-".contains(&c))
 }
 
+/// # Errors
+///
+/// Returns an error when the asset's name is unsafe, its size is zero or over 1 GiB, or its digest
+/// is not 32 hexadecimal bytes.
 pub fn validate_asset(asset: &Asset) -> Result<()> {
     if !safe_name(&asset.name) || asset.size == 0 || asset.size > 1024 * 1024 * 1024 {
         return Err("invalid asset name or size".into());
@@ -58,9 +63,16 @@ pub fn validate_asset(asset: &Asset) -> Result<()> {
 }
 
 pub fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        let _ = write!(out, "{b:02x}");
+    }
+    out
 }
 
+/// # Errors
+///
+/// Returns an error when `s` is not exactly `N` bytes of hexadecimal.
 pub fn unhex<const N: usize>(s: &str) -> Result<[u8; N]> {
     let s = s.trim();
     if s.len() != N * 2 || !s.is_ascii() {
@@ -73,18 +85,27 @@ pub fn unhex<const N: usize>(s: &str) -> Result<[u8; N]> {
     Ok(bytes)
 }
 
+/// # Errors
+///
+/// Returns an error when `secret` is not a 32-byte hexadecimal key.
 pub fn public_key(secret: &str) -> Result<String> {
     Ok(hex(&SigningKey::from_bytes(&unhex(secret)?)
         .verifying_key()
         .to_bytes()))
 }
 
+/// # Errors
+///
+/// Returns an error when `secret` is not a 32-byte hexadecimal key.
 pub fn sign(bytes: &[u8], secret: &str) -> Result<String> {
     Ok(hex(&SigningKey::from_bytes(&unhex(secret)?)
         .sign(bytes)
         .to_bytes()))
 }
 
+/// # Errors
+///
+/// Returns an error when the key or signature is malformed, or the signature does not verify.
 pub fn verify_signature(bytes: &[u8], signature: &str, key: &str) -> Result<()> {
     VerifyingKey::from_bytes(&unhex(key)?)?
         .verify_strict(bytes, &Signature::from_bytes(&unhex(signature)?))?;
@@ -92,6 +113,16 @@ pub fn verify_signature(bytes: &[u8], signature: &str, key: &str) -> Result<()> 
 }
 
 /// The caller supplies an installed trust anchor, never a key from the release.
+///
+/// # Errors
+///
+/// Returns an error when the metadata is over 64 KiB, the signature does not verify, the JSON is
+/// malformed, or the release is rejected: wrong schema or application, a build that is not newer,
+/// or an invalid archive, tag, target or helper.
+#[expect(
+    clippy::case_sensitive_file_extension_comparisons,
+    reason = "a release names its archive exactly, with a lowercase extension"
+)]
 pub fn verify(
     bytes: &[u8],
     signature: &str,
@@ -149,11 +180,14 @@ pub fn verify(
     Ok(release)
 }
 
+/// # Errors
+///
+/// Returns the I/O error when the file cannot be opened or read.
 pub fn digest(path: &Path) -> Result<(u64, String)> {
     let mut file = File::open(path)?;
     let mut hash = Sha256::new();
     let mut size = 0;
-    let mut buf = [0; 65536];
+    let mut buf = vec![0; 65536];
     loop {
         let n = file.read(&mut buf)?;
         if n == 0 {
@@ -165,6 +199,10 @@ pub fn digest(path: &Path) -> Result<(u64, String)> {
     Ok((size, hex(&hash.finalize())))
 }
 
+/// # Errors
+///
+/// Returns an error when the file cannot be read or its size or SHA-256 digest differs from the
+/// release's.
 pub fn verify_archive(path: &Path, release: &Release) -> Result<()> {
     let (size, sha) = digest(path)?;
     if size != release.size || sha != release.sha256 {
@@ -174,6 +212,10 @@ pub fn verify_archive(path: &Path, release: &Release) -> Result<()> {
 }
 
 /// Durable small state files. All temporary paths are inside the controlled session directory.
+///
+/// # Errors
+///
+/// Returns the I/O error when the temporary file cannot be written, synced or renamed into place.
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     let tmp = path.with_extension("new");
     let mut file = File::create(&tmp)?;
@@ -184,6 +226,9 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// # Errors
+///
+/// Returns the I/O error when the file or directory cannot be removed.
 pub fn remove_path(path: &Path) -> Result<()> {
     if path.is_dir() {
         fs::remove_dir_all(path)?;
@@ -212,6 +257,10 @@ pub struct Transaction {
 
 impl Transaction {
     /// Caller must hold the installation lock and own the transaction directory.
+    ///
+    /// # Errors
+    ///
+    /// Returns the I/O error when a bundle cannot be moved back or the journal cannot be written.
     pub fn recover(&self) -> Result<bool> {
         let committed = fs::read(&self.journal).is_ok_and(|s| s == b"committed");
         if committed {
@@ -233,6 +282,11 @@ impl Transaction {
 
     /// Hook permits real process-kill fault injection in the fixture harness.
     /// A returned error triggers rollback; abrupt process death is handled by `recover`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when a previous backup is still present, a move fails, or `checkpoint`
+    /// returns one; the target is rolled back first.
     pub fn replace(&self, mut checkpoint: impl FnMut(&str) -> Result<()>) -> Result<()> {
         if self.backup.exists() {
             return Err("previous backup needs confirmation".into());
