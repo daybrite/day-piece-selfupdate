@@ -238,6 +238,13 @@ pub fn remove_path(path: &Path) -> Result<()> {
     Ok(())
 }
 
+#[cfg_attr(
+    not(unix),
+    expect(
+        clippy::unnecessary_wraps,
+        reason = "the Unix arm opens and syncs the directory and can fail"
+    )
+)]
 fn sync_parent(path: &Path) -> Result<()> {
     // Opening directories as std::fs::File is not supported on Windows.
     #[cfg(unix)]
