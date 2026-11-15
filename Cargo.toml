@@ -2,7 +2,7 @@
 name = "day-piece-self-update"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.89"
+rust-version = "1.100"
 license = "MPL-2.0"
 description = "Experimental Day self-update piece and macOS installer prototype"
 repository = "https://github.com/daybrite/day-piece-selfupdate"
